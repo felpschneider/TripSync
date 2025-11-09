@@ -17,9 +17,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { UserPlusIcon, CopyIcon, CheckIcon, LinkIcon } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from "sonner"
 
 interface InviteDialogProps {
-  onInvite: (email: string) => Promise<{ inviteLink: string }>
+  onInvite: (email: string) => Promise<{ inviteLink?: string; message?: string; added?: boolean }>
 }
 
 export function InviteDialog({ onInvite }: InviteDialogProps) {
@@ -36,10 +37,21 @@ export function InviteDialog({ onInvite }: InviteDialogProps) {
 
     try {
       const result = await onInvite(email)
-      setInviteLink(result.inviteLink)
+      
+      if (result.added) {
+        // Usuário foi adicionado diretamente
+        toast.success(result.message || 'Usuário adicionado à viagem com sucesso!')
+        handleClose()
+        window.location.reload() // Recarregar para mostrar novo membro
+      } else {
+        // Convite criado
+        setInviteLink(result.inviteLink || '')
+        toast.success(result.message || 'Convite enviado por e-mail!')
+      }
       setEmail("")
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating invite:", error)
+      toast.error(error?.message || 'Erro ao enviar convite')
     } finally {
       setLoading(false)
     }
@@ -73,7 +85,7 @@ export function InviteDialog({ onInvite }: InviteDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="lg" className="gap-2">
           <UserPlusIcon className="h-5 w-5" />

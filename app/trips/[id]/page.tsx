@@ -1,22 +1,60 @@
 "use client"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { TripHeader } from "@/components/layout/trip-header"
 import { TripNav } from "@/components/layout/trip-nav"
 import { BudgetSummary } from "@/components/expenses/budget-summary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockTrips, mockExpenses, mockTasks } from "@/lib/mock-data"
+import { api } from "@/lib/api"
 import { CalendarIcon, AlertCircleIcon } from "lucide-react"
 
 export default function TripDashboardPage() {
   const params = useParams()
   const tripId = params.id as string
 
-  // In production, fetch from API
-  const trip = mockTrips.find((t) => t.id === tripId) || mockTrips[0]
-  const expenses = mockExpenses.filter((e) => e.tripId === tripId)
-  const tasks = mockTasks.filter((t) => t.tripId === tripId && !t.completed)
+  const [trip, setTrip] = useState<any>(null)
+  const [expenses, setExpenses] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [tripData, expensesData, tasksData] = await Promise.all([
+          api.trips.get(tripId),
+          api.expenses.list(tripId),
+          api.tasks.list(tripId)
+        ])
+        setTrip(tripData)
+        setExpenses(expensesData)
+        setTasks(tasksData.filter((t: any) => !t.completed))
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [tripId])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    )
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Viagem não encontrada</p>
+      </div>
+    )
+  }
+
+  const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
 
   return (
     <div className="min-h-screen bg-background">

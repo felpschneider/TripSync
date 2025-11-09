@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { DownloadIcon } from "lucide-react"
+import { api } from "@/lib/api"
+import { toast } from "sonner"
 
 interface ExportPdfButtonProps {
   tripId: string
@@ -15,16 +17,11 @@ export function ExportPdfButton({ tripId, tripTitle }: ExportPdfButtonProps) {
   const handleExport = async () => {
     setLoading(true)
     try {
-      // In production, call API to generate PDF
-      // const { url } = await api.export.pdf(tripId);
-      // window.open(url, '_blank');
-
-      // Mock export
-      alert(
-        `Exportando resumo da viagem "${tripTitle}" em PDF...\n\nEm produção, isso geraria um PDF com:\n- Resumo de orçamento\n- Lista de despesas\n- Propostas aprovadas\n- Tarefas concluídas\n- Lista de membros`,
-      )
+      const { url } = await api.export.pdf(tripId)
+      window.open(url, '_blank')
     } catch (error) {
       console.error("Error exporting PDF:", error)
+      toast.error("Erro ao exportar PDF. Tente novamente.")
     } finally {
       setLoading(false)
     }

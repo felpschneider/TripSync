@@ -1,0 +1,209 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelos do banco de dados
+
+model User {
+  id               String   @id @default(uuid())
+  name             String
+  email            String   @unique
+  passwordHash     String
+  profileImageUrl  String?  // URL da imagem de perfil
+  pixKey           String?  // Chave PIX do usuário
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relações
+  organizedTrips Trip[]         @relation("TripOrganizer")
+  memberships    TripMember[]
+  expensesPaid   Expense[]      @relation("ExpensePaidBy")
+  expensesSplit  ExpenseSplit[]
+  proposalsCreated Proposal[]   @relation("ProposalCreator")
+  votes          Vote[]
+  tasksAssigned  Task[]         @relation("TaskAssignedTo")
+  activities     Activity[]
+  chatMessages   ChatMessage[]
+
+  @@map("users")
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  title       String
+  destination String
+  startDate   DateTime
+  endDate     DateTime
+  budget      Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  organizerId String
+  organizer   User         @relation("TripOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  
+  members     TripMember[]
+  expenses    Expense[]
+  proposals   Proposal[]
+  tasks       Task[]
+  activities  Activity[]
+  invites     Invite[]
+  chatMessages ChatMessage[]
+
+  @@map("trips")
+}
+
+model TripMember {
+  id        String   @id @default(uuid())
+  role      String   @default("member") // "organizer" or "member"
+  joinedAt  DateTime @default(now())
+
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@map("trip_members")
+}
+
+model Expense {
+  id            String   @id @default(uuid())
+  description   String
+  amount        Decimal  @db.Decimal(10, 2)
+  date          DateTime
+  category      String   // "accommodation", "food", "transport", "activity", "other"
+  splitMethod   String   @default("equal") // "equal" or "custom"
+  proofImageUrl String?  // URL da imagem do comprovante
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  paidById    String
+  paidBy      User     @relation("ExpensePaidBy", fields: [paidById], references: [id])
+
+  splits      ExpenseSplit[]
+
+  @@map("expenses")
+}
+
+model ExpenseSplit {
+  id         String  @id @default(uuid())
+  amount     Decimal @db.Decimal(10, 2)
+
+  expenseId  String
+  expense    Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  
+  userId     String
+  user       User    @relation(fields: [userId], references: [id])
+
+  @@unique([expenseId, userId])
+  @@map("expense_splits")
+}
+
+model Proposal {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  status      String   @default("voting") // "voting", "approved", "rejected"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  createdById String
+  createdBy   User     @relation("ProposalCreator", fields: [createdById], references: [id])
+
+  votes       Vote[]
+
+  @@map("proposals")
+}
+
+model Vote {
+  id         String   @id @default(uuid())
+  vote       String   // "yes" or "no"
+  createdAt  DateTime @default(now())
+
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([proposalId, userId])
+  @@map("votes")
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  completed   Boolean  @default(false)
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  assignedToId String?
+  assignedTo   User?    @relation("TaskAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  type      String   // "expense_added", "proposal_created", "task_completed", "member_joined", "trip_created", "budget_updated"
+  message   String   @db.Text
+  timestamp DateTime @default(now())
+
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activities")
+}
+
+model Invite {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  email     String
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("invites")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+  @@index([tripId, createdAt])
+}

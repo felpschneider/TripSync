@@ -12,6 +12,8 @@ interface TripCardProps {
     endDate: string
     budget: number
     totalSpent: number
+    userSpent?: number
+    owedToUser?: number
     memberCount: number
     imageUrl: string
   }
@@ -57,6 +59,24 @@ export function TripCard({ trip }: TripCardProps) {
               R$ {remaining.toFixed(2)} restante de R$ {trip.budget.toFixed(2)}
             </span>
           </div>
+          {trip.userSpent !== undefined && (
+            <div className="pt-2 border-t space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Você pagou:</span>
+                <span className="font-semibold text-primary">R$ {trip.userSpent.toFixed(2)}</span>
+              </div>
+              {trip.owedToUser !== undefined && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {trip.owedToUser >= 0 ? "Te devem:" : "Você deve:"}
+                  </span>
+                  <span className={`font-semibold ${trip.owedToUser >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                    R$ {Math.abs(trip.owedToUser).toFixed(2)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>
