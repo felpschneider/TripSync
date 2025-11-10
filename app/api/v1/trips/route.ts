@@ -17,7 +17,11 @@ export async function GET(request: NextRequest) {
       },
       include: {
         members: true,
-        expenses: true,
+        expenses: {
+          include: {
+            splits: true
+          }
+        },
         _count: {
           select: { members: true }
         }

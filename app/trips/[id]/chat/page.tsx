@@ -10,6 +10,7 @@ import { ChatInput } from "@/components/chat/chat-input"
 import { useAuth } from "@/contexts/auth-context"
 import { api } from "@/lib/api"
 import { MessageSquareIcon } from "lucide-react"
+import { toast } from "sonner"
 
 export default function ChatPage() {
   const params = useParams()

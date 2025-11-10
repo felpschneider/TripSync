@@ -26,7 +26,7 @@ export async function GET(
     const expenses = await prisma.expense.findMany({
       where: { tripId },
       include: {
-        paidBy: { select: { id: true, name: true, email: true } },
+        paidBy: { select: { id: true, name: true, email: true, pixKey: true } },
         splits: {
           include: {
             user: { select: { id: true, name: true, email: true } }
@@ -36,18 +36,28 @@ export async function GET(
       orderBy: { date: 'desc' }
     })
 
-    const formattedExpenses = expenses.map(expense => ({
-      id: expense.id,
-      tripId: expense.tripId,
-      description: expense.description,
-      amount: Number(expense.amount),
-      date: expense.date.toISOString().split('T')[0],
-      category: expense.category,
-      splitMethod: expense.splitMethod,
-      proofImageUrl: expense.proofImageUrl,
-      paidBy: expense.paidBy,
-      participants: expense.splits.map(split => split.user)
-    }))
+    const formattedExpenses = expenses.map(expense => {
+      console.log('💳 Despesa formatada:', {
+        id: expense.id,
+        description: expense.description,
+        paidByName: expense.paidBy.name,
+        pixKey: expense.paidBy.pixKey,
+        hasPixKey: !!expense.paidBy.pixKey
+      })
+      
+      return {
+        id: expense.id,
+        tripId: expense.tripId,
+        description: expense.description,
+        amount: Number(expense.amount),
+        date: expense.date.toISOString().split('T')[0],
+        category: expense.category,
+        splitMethod: expense.splitMethod,
+        proofImageUrl: expense.proofImageUrl,
+        paidBy: expense.paidBy,
+        participants: expense.splits.map(split => split.user)
+      }
+    })
 
     return success(formattedExpenses)
   } catch (err) {
@@ -104,7 +114,7 @@ export async function POST(
           }
         },
         include: {
-          paidBy: { select: { id: true, name: true, email: true } },
+          paidBy: { select: { id: true, name: true, email: true, pixKey: true } },
           splits: {
             include: {
               user: { select: { id: true, name: true, email: true } }

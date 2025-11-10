@@ -31,7 +31,8 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            profileImageUrl: true
           }
         }
       },
@@ -45,6 +46,7 @@ export async function GET(
       userId: message.userId,
       userName: message.user.name,
       userEmail: message.user.email,
+      userAvatar: message.user.profileImageUrl,
       timestamp: message.createdAt.toISOString()
     }))
 
@@ -93,7 +95,8 @@ export async function POST(
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            profileImageUrl: true
           }
         }
       }
@@ -105,6 +108,7 @@ export async function POST(
       userId: message.userId,
       userName: message.user.name,
       userEmail: message.user.email,
+      userAvatar: message.user.profileImageUrl,
       timestamp: message.createdAt.toISOString()
     }, 201)
   } catch (err) {

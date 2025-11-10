@@ -46,7 +46,7 @@ export async function PUT(
         }
       },
       include: {
-        paidBy: { select: { id: true, name: true, email: true } },
+        paidBy: { select: { id: true, name: true, email: true, pixKey: true } },
         splits: {
           include: {
             user: { select: { id: true, name: true, email: true } }

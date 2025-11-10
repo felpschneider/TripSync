@@ -42,8 +42,19 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
   })
 
   if (!response.ok) {
+    let message = "Erro na requisição"
+    try {
+      const text = await response.text()
+      // Tenta fazer parse como JSON
+      const errorData = JSON.parse(text)
+      message = errorData.error || errorData.message || text || message
+    } catch {
+      // Se não for JSON válido, usa mensagem padrão
+      message = "Erro na requisição"
+    }
+    
     const error: ApiError = {
-      message: (await response.text()) || "Erro na requisição",
+      message,
       status: response.status,
     }
     throw error

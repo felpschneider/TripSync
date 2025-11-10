@@ -71,17 +71,20 @@ export default function ProfilePage() {
       setSaving(true)
       
       const updateData: any = {
-        name,
-        pixKey,
-        profileImageUrl: profileImage
+        name: name.trim(),
+        pixKey: pixKey.trim(),
+        profileImageUrl: profileImage.trim()
       }
+      
+      console.log("Enviando dados de atualização:", updateData)
       
       if (newPassword && currentPassword) {
         updateData.currentPassword = currentPassword
         updateData.newPassword = newPassword
       }
       
-      await api.profile.update(updateData)
+      const result = await api.profile.update(updateData)
+      console.log("Perfil atualizado:", result)
       
       toast.success("Perfil atualizado com sucesso!")
       setCurrentPassword("")
@@ -90,6 +93,7 @@ export default function ProfilePage() {
       
       // Recarregar perfil
       const profileData = await api.profile.get()
+      console.log("Perfil recarregado:", profileData)
       setProfile(profileData)
     } catch (error: any) {
       console.error("Error updating profile:", error)

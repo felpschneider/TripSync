@@ -47,6 +47,14 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { name, currentPassword, newPassword, profileImageUrl, pixKey } = body
 
+    console.log('📝 Atualizando perfil:', { 
+      userId: user.userId, 
+      name, 
+      pixKey, 
+      hasPixKey: !!pixKey,
+      pixKeyLength: pixKey?.length 
+    })
+
     // Validações básicas
     if (!name || name.trim() === '') {
       return error('Nome é obrigatório', 400)
@@ -85,8 +93,8 @@ export async function PUT(request: NextRequest) {
         where: { id: user.userId },
         data: {
           name: name.trim(),
-          profileImageUrl: profileImageUrl || null,
-          pixKey: pixKey || null,
+          profileImageUrl: profileImageUrl?.trim() || null,
+          pixKey: pixKey?.trim() || null,
           passwordHash: newPasswordHash
         }
       })
@@ -96,8 +104,8 @@ export async function PUT(request: NextRequest) {
         where: { id: user.userId },
         data: {
           name: name.trim(),
-          profileImageUrl: profileImageUrl || null,
-          pixKey: pixKey || null
+          profileImageUrl: profileImageUrl?.trim() || null,
+          pixKey: pixKey?.trim() || null
         }
       })
     }
@@ -112,6 +120,11 @@ export async function PUT(request: NextRequest) {
         profileImageUrl: true,
         pixKey: true
       }
+    })
+
+    console.log('✅ Perfil atualizado no banco:', {
+      pixKey: updatedProfile!.pixKey,
+      hasPixKey: !!updatedProfile!.pixKey
     })
 
     return success({
