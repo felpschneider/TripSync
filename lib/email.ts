@@ -20,8 +20,18 @@ export function getAppBaseUrl(): string {
   }
   
   // Priority 3: NEXT_PUBLIC_API_BASE_URL without /api/v1
+  // Only use this if it's a full URL (starts with http:// or https://)
+  // Skip if it's a relative path to avoid empty string results
   if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '')
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+    // Check if it's a full URL (not a relative path)
+    if (apiBaseUrl.startsWith('http://') || apiBaseUrl.startsWith('https://')) {
+      const baseUrl = apiBaseUrl.replace('/api/v1', '')
+      // Only return if the result is not empty (handles edge case where URL ends with /api/v1)
+      if (baseUrl) {
+        return baseUrl
+      }
+    }
   }
   
   // Fallback: localhost for development
