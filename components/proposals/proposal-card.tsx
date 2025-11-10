@@ -23,9 +23,10 @@ interface Proposal {
 interface ProposalCardProps {
   proposal: Proposal
   onVote: (proposalId: string, vote: "yes" | "no") => void
+  onFinalize?: (proposalId: string) => void
 }
 
-export function ProposalCard({ proposal, onVote }: ProposalCardProps) {
+export function ProposalCard({ proposal, onVote, onFinalize }: ProposalCardProps) {
   const totalVotes = proposal.votes.yes + proposal.votes.no
   const yesPercentage = totalVotes > 0 ? (proposal.votes.yes / totalVotes) * 100 : 0
 
@@ -69,29 +70,41 @@ export function ProposalCard({ proposal, onVote }: ProposalCardProps) {
         </div>
 
         {proposal.status === "voting" && (
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant={proposal.userVote === "yes" ? "default" : "outline"}
-              className="flex-1 gap-2"
-              onClick={() => onVote(proposal.id, "yes")}
-            >
-              <ThumbsUpIcon className="h-4 w-4" />A favor
-            </Button>
-            <Button
-              variant={proposal.userVote === "no" ? "destructive" : "outline"}
-              className="flex-1 gap-2"
-              onClick={() => onVote(proposal.id, "no")}
-            >
-              <ThumbsDownIcon className="h-4 w-4" />
-              Contra
-            </Button>
-          </div>
-        )}
+          <>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant={proposal.userVote === "yes" ? "default" : "outline"}
+                className="flex-1 gap-2"
+                onClick={() => onVote(proposal.id, "yes")}
+              >
+                <ThumbsUpIcon className="h-4 w-4" />A favor
+              </Button>
+              <Button
+                variant={proposal.userVote === "no" ? "destructive" : "outline"}
+                className="flex-1 gap-2"
+                onClick={() => onVote(proposal.id, "no")}
+              >
+                <ThumbsDownIcon className="h-4 w-4" />
+                Contra
+              </Button>
+            </div>
 
-        {proposal.userVote && proposal.status === "voting" && (
-          <p className="text-xs text-center text-muted-foreground">
-            Você votou {proposal.userVote === "yes" ? "a favor" : "contra"} desta proposta
-          </p>
+            {proposal.userVote && (
+              <p className="text-xs text-center text-muted-foreground">
+                Você votou {proposal.userVote === "yes" ? "a favor" : "contra"} desta proposta
+              </p>
+            )}
+
+            {onFinalize && totalVotes > 0 && (
+              <Button
+                variant="secondary"
+                className="w-full mt-2"
+                onClick={() => onFinalize(proposal.id)}
+              >
+                Finalizar Votação
+              </Button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

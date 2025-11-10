@@ -1,57 +1,97 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { TripHeader } from "@/components/layout/trip-header"
 import { TripNav } from "@/components/layout/trip-nav"
 import { ProposalCard } from "@/components/proposals/proposal-card"
 import { CreateProposalDialog } from "@/components/proposals/create-proposal-dialog"
-import { mockTrips, mockProposals } from "@/lib/mock-data"
+import { api } from "@/lib/api"
+import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ProposalsPage() {
   const params = useParams()
   const tripId = params.id as string
 
-  const trip = mockTrips.find((t) => t.id === tripId) || mockTrips[0]
-  const [proposals, setProposals] = useState(mockProposals.filter((p) => p.tripId === tripId))
+  const [trip, setTrip] = useState<any>(null)
+  const [proposals, setProposals] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [tripData, proposalsData] = await Promise.all([
+          api.trips.get(tripId),
+          api.proposals.list(tripId)
+        ])
+        setTrip(tripData)
+        setProposals(proposalsData)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [tripId])
 
   const handleCreateProposal = async (proposalData: { title: string; description: string }) => {
-    // In production, call API
-    const newProposal = {
-      id: String(proposals.length + 1),
-      tripId,
-      ...proposalData,
-      createdBy: { id: "1", name: "Nathalia Silva" },
-      createdAt: new Date().toISOString(),
-      votes: { yes: 0, no: 0 },
-      userVote: null,
-      status: "voting" as const,
+    try {
+      const newProposal = await api.proposals.create(tripId, proposalData)
+      setProposals([newProposal, ...proposals])
+    } catch (error) {
+      console.error("Error creating proposal:", error)
+      toast.error("Erro ao criar proposta. Tente novamente.")
     }
-    setProposals([newProposal, ...proposals])
   }
 
   const handleVote = async (proposalId: string, vote: "yes" | "no") => {
-    // In production, call API
-    setProposals(
-      proposals.map((p) => {
-        if (p.id === proposalId) {
-          const updatedVotes = { ...p.votes }
-          if (p.userVote) {
-            // Remove previous vote
-            updatedVotes[p.userVote]--
-          }
-          // Add new vote
-          updatedVotes[vote]++
+    try {
+      const updatedProposal = await api.proposals.vote(tripId, proposalId, vote)
+      setProposals(proposals.map((p) => (p.id === proposalId ? updatedProposal : p)))
+    } catch (error) {
+      console.error("Error voting on proposal:", error)
+      toast.error("Erro ao votar. Tente novamente.")
+    }
+  }
 
-          return {
-            ...p,
-            votes: updatedVotes,
-            userVote: vote,
+  const handleFinalize = async (proposalId: string) => {
+    toast("Tem certeza que deseja finalizar esta proposta? A votação será encerrada.", {
+      action: {
+        label: "Finalizar",
+        onClick: async () => {
+          try {
+            const finalizedProposal = await api.proposals.finalize(tripId, proposalId)
+            setProposals(proposals.map((p) => (p.id === proposalId ? finalizedProposal : p)))
+            toast.success("Proposta finalizada com sucesso!")
+          } catch (error) {
+            console.error("Error finalizing proposal:", error)
+            toast.error("Erro ao finalizar proposta. Tente novamente.")
           }
-        }
-        return p
-      }),
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    )
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Viagem não encontrada</p>
+      </div>
     )
   }
 
@@ -86,7 +126,7 @@ export default function ProposalsPage() {
               </div>
             ) : (
               votingProposals.map((proposal) => (
-                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} />
+                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} onFinalize={handleFinalize} />
               ))
             )}
           </TabsContent>
@@ -98,7 +138,7 @@ export default function ProposalsPage() {
               </div>
             ) : (
               completedProposals.map((proposal) => (
-                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} />
+                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} onFinalize={handleFinalize} />
               ))
             )}
           </TabsContent>

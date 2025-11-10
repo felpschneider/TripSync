@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { PlusIcon, UsersIcon } from "lucide-react"
+import { PlusIcon, UsersIcon, ImageIcon } from "lucide-react"
 
 interface Member {
   id: string
@@ -41,6 +41,7 @@ export function ExpenseFormDialog({ members, onSubmit, editExpense, trigger }: E
     paidById: "",
     category: "other",
     splitMethod: "equal",
+    proofImageUrl: "",
   })
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
 
@@ -53,6 +54,7 @@ export function ExpenseFormDialog({ members, onSubmit, editExpense, trigger }: E
         paidById: editExpense.paidBy.id,
         category: editExpense.category,
         splitMethod: editExpense.splitMethod,
+        proofImageUrl: editExpense.proofImageUrl || "",
       })
       setSelectedParticipants(editExpense.participants.map((p: any) => p.id))
       setOpen(true)
@@ -77,6 +79,7 @@ export function ExpenseFormDialog({ members, onSubmit, editExpense, trigger }: E
         paidById: "",
         category: "other",
         splitMethod: "equal",
+        proofImageUrl: "",
       })
       setSelectedParticipants([])
     } catch (error) {
@@ -231,6 +234,34 @@ export function ExpenseFormDialog({ members, onSubmit, editExpense, trigger }: E
                   <SelectItem value="custom">Divisão customizada</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="proofImageUrl" className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Comprovante (URL da Imagem)
+              </Label>
+              <Input
+                id="proofImageUrl"
+                type="url"
+                placeholder="https://exemplo.com/comprovante.jpg"
+                value={formData.proofImageUrl}
+                onChange={(e) => setFormData({ ...formData, proofImageUrl: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Opcional: Cole a URL de uma imagem do comprovante de pagamento
+              </p>
+              {formData.proofImageUrl && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.proofImageUrl} 
+                    alt="Preview do comprovante" 
+                    className="max-w-full h-32 object-contain border rounded-md"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

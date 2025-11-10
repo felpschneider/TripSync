@@ -4,8 +4,9 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, UserIcon, EditIcon, TrashIcon, CreditCardIcon } from "lucide-react"
+import { CalendarIcon, UserIcon, EditIcon, TrashIcon, CreditCardIcon, EyeIcon } from "lucide-react"
 import { PaymentDialog } from "./payment-dialog"
+import { ExpenseDetailDialog } from "./expense-detail-dialog"
 import { useAuth } from "@/contexts/auth-context"
 
 interface Expense {
@@ -17,6 +18,7 @@ interface Expense {
   participants: { id: string; name: string }[]
   splitMethod: string
   category: string
+  proofImageUrl?: string
 }
 
 interface ExpenseListProps {
@@ -44,6 +46,7 @@ const categoryColors: Record<string, string> = {
 export function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
   const { user } = useAuth()
   const [paymentExpense, setPaymentExpense] = useState<Expense | null>(null)
+  const [detailExpense, setDetailExpense] = useState<Expense | null>(null)
 
   if (expenses.length === 0) {
     return (
@@ -60,6 +63,7 @@ export function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
       <div className="space-y-3">
         {expenses.map((expense) => {
           const isPaidByOther = expense.paidBy.id !== user?.id
+          const isPaidByMe = expense.paidBy.id === user?.id
           const isParticipant = expense.participants.some((p) => p.id === user?.id)
           const shouldShowPayButton = isPaidByOther && isParticipant
 
@@ -86,17 +90,30 @@ export function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
                         </span>
                       </div>
                     </div>
-                    {shouldShowPayButton && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 gap-2 bg-transparent"
-                        onClick={() => setPaymentExpense(expense)}
-                      >
-                        <CreditCardIcon className="h-4 w-4" />
-                        Pagar
-                      </Button>
-                    )}
+                    <div className="flex gap-2 mt-3">
+                      {shouldShowPayButton && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 bg-transparent"
+                          onClick={() => setPaymentExpense(expense)}
+                        >
+                          <CreditCardIcon className="h-4 w-4" />
+                          Pagar
+                        </Button>
+                      )}
+                      {isPaidByMe && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 bg-transparent"
+                          onClick={() => setDetailExpense(expense)}
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                          Ver Detalhes
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="text-right">
@@ -123,6 +140,10 @@ export function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
 
       {paymentExpense && (
         <PaymentDialog expense={paymentExpense} open={!!paymentExpense} onClose={() => setPaymentExpense(null)} />
+      )}
+      
+      {detailExpense && (
+        <ExpenseDetailDialog expense={detailExpense} open={!!detailExpense} onClose={() => setDetailExpense(null)} />
       )}
     </>
   )

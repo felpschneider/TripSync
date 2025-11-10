@@ -1,18 +1,55 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { TripHeader } from "@/components/layout/trip-header"
 import { TripNav } from "@/components/layout/trip-nav"
 import { ActivityItem } from "@/components/activity/activity-item"
-import { mockTrips, mockActivities } from "@/lib/mock-data"
+import { api } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 
 export default function ActivityPage() {
   const params = useParams()
   const tripId = params.id as string
 
-  const trip = mockTrips.find((t) => t.id === tripId) || mockTrips[0]
-  const activities = mockActivities.filter((a) => a.tripId === tripId)
+  const [trip, setTrip] = useState<any>(null)
+  const [activities, setActivities] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [tripData, activitiesData] = await Promise.all([
+          api.trips.get(tripId),
+          api.activities.list(tripId)
+        ])
+        setTrip(tripData)
+        setActivities(activitiesData)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [tripId])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    )
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Viagem não encontrada</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

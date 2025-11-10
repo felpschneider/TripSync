@@ -38,9 +38,11 @@ export function PaymentDialog({ expense, open, onClose }: PaymentDialogProps) {
   const [loading, setLoading] = useState(false)
 
   const amountPerPerson = expense.amount / expense.participants.length
-  const pixKey = expense.paidBy.pixKey || "pix@example.com"
+  const pixKey = expense.paidBy.pixKey
+  const hasPixKey = !!pixKey
 
   const handleCopyPix = async () => {
+    if (!pixKey) return
     await navigator.clipboard.writeText(pixKey)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -98,19 +100,31 @@ export function PaymentDialog({ expense, open, onClose }: PaymentDialogProps) {
               <Label className="text-base font-semibold">Dados PIX de {expense.paidBy.name}</Label>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="pix-key" className="text-sm text-muted-foreground">
-                Chave PIX
-              </Label>
-              <div className="flex gap-2">
-                <Input id="pix-key" value={pixKey} readOnly className="font-mono text-sm" />
-                <Button type="button" size="icon" onClick={handleCopyPix} variant="outline">
-                  {copied ? <CheckIcon className="h-4 w-4 text-green-600" /> : <CopyIcon className="h-4 w-4" />}
-                </Button>
+            {hasPixKey ? (
+              <div className="space-y-2">
+                <Label htmlFor="pix-key" className="text-sm text-muted-foreground">
+                  Chave PIX
+                </Label>
+                <div className="flex gap-2">
+                  <Input id="pix-key" value={pixKey} readOnly className="font-mono text-sm" />
+                  <Button type="button" size="icon" onClick={handleCopyPix} variant="outline">
+                    {copied ? <CheckIcon className="h-4 w-4 text-green-600" /> : <CopyIcon className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {copied && <p className="text-xs text-green-600">Chave PIX copiada!</p>}
               </div>
-              {copied && <p className="text-xs text-green-600">Chave PIX copiada!</p>}
-            </div>
-          </div>
+            ) : (
+              <Card className="bg-orange-500/10 border-orange-500/20">
+                <CardContent className="p-4">
+                  <p className="text-sm text-orange-700 dark:text-orange-400">
+                    ⚠️ {expense.paidBy.name} ainda não configurou uma chave PIX no perfil.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Entre em contato com {expense.paidBy.name} para obter as informações de pagamento.
+                  </p>
+                </CardContent>
+              </Card>
+            )}</div>
 
           {/* Receipt Upload */}
           <div className="space-y-2">

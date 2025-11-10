@@ -1,26 +1,34 @@
-# Viagem em Grupo - Frontend MVP
+# 🌍 TripSync - Aplicação Full-Stack para Viagens em Grupo
 
-Aplicativo web responsivo (PWA) para organização de viagens em grupo, desenvolvido com React, Next.js e Tailwind CSS.
+Aplicação web completa (Full-Stack) para organização de viagens em grupo, desenvolvida com Next.js, PostgreSQL e Prisma.
 
 ## 📋 Visão Geral
 
-Este é o frontend de um sistema completo para organizadores informais de viagens gerenciarem:
-- Orçamento e despesas compartilhadas
-- Propostas de roteiro com votação
-- Tarefas e responsabilidades
-- Membros e convites
-- Feed de atividades em tempo real
+Sistema **completo** (Frontend + Backend + Banco de Dados) para organizadores de viagens gerenciarem:
+- 💰 Orçamento e despesas compartilhadas
+- 🗳️ Propostas de roteiro com votação
+- ✅ Tarefas e responsabilidades
+- 👥 Membros e convites
+- 📊 Feed de atividades em tempo real
+- 🔐 Autenticação segura (JWT + bcrypt)
 
-**Público-alvo:** Organizadores como Nathalia em Mogi das Cruzes que coordenam viagens com amigos.
+**Público-alvo:** Organizadores que coordenam viagens com amigos e precisam de uma ferramenta completa e profissional.
 
 ## 🚀 Tecnologias
 
-- **Framework:** Next.js 15 (App Router)
+### Frontend
+- **Framework:** Next.js 14 (App Router)
 - **UI:** React 19 + TypeScript
 - **Estilização:** Tailwind CSS v4
 - **Componentes:** shadcn/ui
 - **PWA:** Manifest configurado para instalação mobile
-- **API:** REST (configurável para seu backend Spring Boot)
+
+### Backend
+- **API:** Next.js API Routes (REST)
+- **Banco de Dados:** PostgreSQL
+- **ORM:** Prisma
+- **Autenticação:** JWT (jsonwebtoken)
+- **Segurança:** bcrypt para hash de senhas
 
 ## 🎨 Design
 
@@ -35,204 +43,141 @@ Este é o frontend de um sistema completo para organizadores informais de viagen
 ### Pré-requisitos
 
 - Node.js 18+ 
-- npm ou yarn
+- PostgreSQL (ou Docker)
+- pnpm (recomendado) ou npm
 
-### Passos
+### 🚀 Setup Rápido (5 minutos)
 
-1. **Clone ou baixe o projeto**
+1. **Clone o projeto**
 
-\`\`\`bash
-# Se usando Git
+```bash
 git clone <seu-repositorio>
-cd viagem-grupo
+cd TripSync
+```
 
-# Ou baixe o ZIP e extraia
-\`\`\`
+2. **PostgreSQL via Docker (mais fácil)**
 
-2. **Instale as dependências**
+```bash
+docker run --name tripsync-db \
+  -e POSTGRES_PASSWORD=senha123 \
+  -e POSTGRES_DB=tripsync \
+  -p 5432:5432 -d postgres:15
+```
 
-\`\`\`bash
-npm install
-\`\`\`
+3. **Configure as variáveis de ambiente**
 
-3. **Configure a URL do backend**
+Crie um arquivo `.env` na raiz:
 
-Crie um arquivo `.env.local` na raiz do projeto:
+```env
+DATABASE_URL="postgresql://postgres:senha123@localhost:5432/tripsync?schema=public"
+JWT_SECRET="sua-chave-secreta-super-forte"
+NEXT_PUBLIC_API_BASE_URL="http://localhost:3000/api/v1"
+```
 
-\`\`\`env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
-\`\`\`
+**⚠️ IMPORTANTE:** Troque `senha123` pela sua senha do PostgreSQL!
 
-4. **Execute o projeto**
+4. **Instale e configure**
 
-\`\`\`bash
-npm run dev
-\`\`\`
+```bash
+pnpm install
+pnpm run setup
+```
 
-Acesse: `http://localhost:3000`
+5. **Execute o projeto**
 
-## 🔌 Conectando ao Backend
+```bash
+pnpm dev
+```
 
-### Configuração
+Acesse: http://localhost:3000
 
-O frontend está configurado para consumir uma API REST. A URL base é definida em:
+### 📚 Documentação Detalhada
 
-\`\`\`typescript
-// lib/api.ts
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1"
-\`\`\`
+- **Setup Rápido:** `INICIO_RAPIDO.md`
+- **Setup Completo:** `SETUP_BACKEND.md`
+- **Comandos Úteis:** `COMANDOS_UTEIS.md`
+- **Implementação:** `IMPLEMENTACAO_BACKEND.md`
 
-### Endpoints Esperados
+## 🗄️ Banco de Dados
 
-O frontend faz requisições para os seguintes endpoints. Implemente-os no seu backend Spring Boot:
+### Schema Prisma
 
-#### Autenticação
+O projeto usa **Prisma ORM** com **PostgreSQL**. Schema completo em `prisma/schema.prisma`.
 
-\`\`\`
-POST   /auth/login
-Body:  { "email": "string", "password": "string" }
-Response: { "token": "string", "user": { "id": "string", "name": "string", "email": "string" } }
+**9 Tabelas:**
+- `users` - Usuários
+- `trips` - Viagens
+- `trip_members` - Membros das viagens
+- `expenses` - Despesas
+- `expense_splits` - Divisão de despesas
+- `proposals` - Propostas de roteiro
+- `votes` - Votos
+- `tasks` - Tarefas
+- `activities` - Feed de atividades
+- `invites` - Convites
 
-POST   /auth/signup
-Body:  { "email": "string", "password": "string", "name": "string" }
-Response: { "token": "string", "user": { "id": "string", "name": "string", "email": "string" } }
+### Visualizar Dados
 
-GET    /auth/invite/{token}
-Response: { "valid": boolean, "tripId": "string" }
-\`\`\`
+```bash
+pnpm run db:studio
+```
 
-#### Viagens
+Abre http://localhost:5555 com interface visual do banco.
 
-\`\`\`
-GET    /trips
-Response: Array<Trip>
+## 🔌 API Backend
 
-GET    /trips/{id}
-Response: Trip
+### Arquitetura
 
-POST   /trips
-Body:  { "title": "string", "destination": "string", "startDate": "string", "endDate": "string", "budget": number }
-Response: Trip
+O backend está implementado com **Next.js API Routes** em `/app/api/v1/`.
 
-PUT    /trips/{id}
-Body:  { "title": "string", "destination": "string", "startDate": "string", "endDate": "string", "budget": number }
-Response: Trip
+### Principais Endpoints
 
-DELETE /trips/{id}
-Response: void
-\`\`\`
+**Autenticação:**
+- `POST /api/v1/auth/signup` - Cadastro
+- `POST /api/v1/auth/login` - Login
+- `GET /api/v1/auth/invite/{token}` - Validar convite
 
-#### Despesas
+**Viagens:**
+- `GET /api/v1/trips` - Listar
+- `POST /api/v1/trips` - Criar
+- `GET /api/v1/trips/{id}` - Detalhes
+- `PUT /api/v1/trips/{id}` - Atualizar
+- `DELETE /api/v1/trips/{id}` - Deletar
 
-\`\`\`
-GET    /trips/{tripId}/expenses
-Response: Array<Expense>
+**Despesas, Propostas, Tarefas, Membros, Atividades:**
+- Endpoints completos em `/api/v1/trips/{tripId}/...`
 
-GET    /trips/{tripId}/expenses/{id}
-Response: Expense
+📖 **Documentação completa:** `BACKEND_ENDPOINTS.md`
 
-POST   /trips/{tripId}/expenses
-Body:  { 
-  "description": "string", 
-  "amount": number, 
-  "date": "string", 
-  "paidById": "string",
-  "participantIds": ["string"],
-  "category": "string",
-  "splitMethod": "string"
-}
-Response: Expense
+### Segurança
 
-PUT    /trips/{tripId}/expenses/{id}
-Body:  { ... }
-Response: Expense
+- ✅ **JWT** - Tokens com expiração de 7 dias
+- ✅ **bcrypt** - Hash de senhas com 10 salt rounds
+- ✅ **Validações** - Entrada validada em todos os endpoints
+- ✅ **Permissões** - Controle de acesso (organizer vs member)
 
-DELETE /trips/{tripId}/expenses/{id}
-Response: void
-\`\`\`
+## 🧪 Testando
 
-#### Propostas
+### Via Interface
+1. Acesse http://localhost:3000
+2. Crie uma conta
+3. Crie uma viagem
+4. Adicione despesas, propostas, tarefas
+5. Convide membros
 
-\`\`\`
-GET    /trips/{tripId}/proposals
-Response: Array<Proposal>
+### Via Prisma Studio
+```bash
+pnpm run db:studio
+```
+Visualize e edite dados em tempo real em http://localhost:5555
 
-GET    /trips/{tripId}/proposals/{id}
-Response: Proposal
-
-POST   /trips/{tripId}/proposals
-Body:  { "title": "string", "description": "string" }
-Response: Proposal
-
-POST   /trips/{tripId}/proposals/{proposalId}/vote
-Body:  { "vote": "yes" | "no" }
-Response: Proposal
-\`\`\`
-
-#### Tarefas
-
-\`\`\`
-GET    /trips/{tripId}/tasks
-Response: Array<Task>
-
-POST   /trips/{tripId}/tasks
-Body:  { "title": "string", "assignedToId": "string", "dueDate": "string" }
-Response: Task
-
-PUT    /trips/{tripId}/tasks/{id}
-Body:  { "title": "string", "assignedToId": "string", "dueDate": "string", "completed": boolean }
-Response: Task
-
-POST   /trips/{tripId}/tasks/{id}/toggle
-Response: Task
-\`\`\`
-
-#### Membros
-
-\`\`\`
-GET    /trips/{tripId}/members
-Response: Array<Member>
-
-POST   /trips/{tripId}/members/invite
-Body:  { "email": "string" }
-Response: { "inviteLink": "string" }
-
-DELETE /trips/{tripId}/members/{memberId}
-Response: void
-\`\`\`
-
-#### Atividades
-
-\`\`\`
-GET    /trips/{tripId}/activities
-Response: Array<Activity>
-\`\`\`
-
-#### Exportação
-
-\`\`\`
-GET    /trips/{tripId}/export/pdf
-Response: { "url": "string" }
-\`\`\`
-
-### Autenticação JWT
-
-O frontend envia o token JWT no header de todas as requisições autenticadas:
-
-\`\`\`
-Authorization: Bearer {token}
-\`\`\`
-
-O token é armazenado no `localStorage` após login/signup.
-
-## 🧪 Modo Demo (Dados Mock)
-
-O projeto inclui dados de exemplo em `lib/mock-data.ts` para desenvolvimento local sem backend.
-
-Para usar dados reais:
-1. Configure `NEXT_PUBLIC_API_BASE_URL` no `.env.local`
-2. Implemente os endpoints no backend
-3. O frontend automaticamente usará a API real
+### Via cURL
+```bash
+# Cadastro
+curl -X POST http://localhost:3000/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Teste","email":"teste@test.com","password":"123456"}'
+```
 
 ## 📱 PWA (Progressive Web App)
 
@@ -244,205 +189,129 @@ O app pode ser instalado em dispositivos móveis:
 
 Configuração em: `public/manifest.json`
 
-## 🎯 Critérios de Aceitação MVP
+## ✅ Funcionalidades
 
-- ✅ Criar uma viagem com título, destino, datas e orçamento
-- ✅ Adicionar 3 despesas e visualizar cálculo por pessoa
-- ✅ Criar 2 propostas de roteiro e votar
-- ✅ Atribuir tarefas a membros
-- ✅ Visualizar feed de atividades
-- ✅ Convidar membros via link
-- ✅ Layout responsivo mobile-first
-- ✅ Modo claro/escuro
-
-## 🧪 Testes Manuais
-
-### Cenário 1: Criar e Gerenciar Viagem
-
-1. Faça login com qualquer email/senha (modo demo)
-2. Clique em "Nova Viagem"
-3. Preencha: "Campos do Jordão", datas futuras, orçamento R$ 5000
-4. Verifique que a viagem aparece no dashboard
-
-### Cenário 2: Adicionar Despesas
-
-1. Entre na viagem criada
-2. Vá para aba "Despesas"
-3. Clique "Nova Despesa"
-4. Adicione: "Hospedagem", R$ 1800, selecione participantes
-5. Adicione mais 2 despesas
-6. Verifique que o resumo de orçamento atualiza corretamente
-7. Confirme que "Média por Pessoa" está correta
-
-### Cenário 3: Propostas e Votação
-
-1. Vá para aba "Propostas"
-2. Crie proposta: "Visita ao Horto Florestal"
-3. Crie segunda proposta: "Jantar no Restaurante X"
-4. Vote "A favor" na primeira
-5. Vote "Contra" na segunda
-6. Verifique que os votos aparecem corretamente
-
-### Cenário 4: Tarefas
-
-1. Vá para aba "Tarefas"
-2. Crie tarefa: "Reservar pousada", atribua a um membro
-3. Marque como concluída
-4. Verifique que aparece na aba "Concluídas"
-
-### Cenário 5: Membros e Convites
-
-1. Vá para aba "Membros"
-2. Clique "Convidar Membro"
-3. Digite um email
-4. Copie o link gerado
-5. Verifique que pode compartilhar
+- ✅ **Autenticação** - Cadastro e login seguros
+- ✅ **Viagens** - CRUD completo
+- ✅ **Despesas** - Adicionar e dividir custos
+- ✅ **Propostas** - Criar e votar
+- ✅ **Tarefas** - Gerenciar responsabilidades
+- ✅ **Membros** - Convidar via link
+- ✅ **Atividades** - Feed em tempo real
+- ✅ **Responsivo** - Mobile-first
+- ✅ **Modo Escuro** - Tema claro/escuro
+- ✅ **PWA** - Instalável como app
 
 ## 📂 Estrutura do Projeto
 
-\`\`\`
-viagem-grupo/
-├── app/                      # Páginas Next.js (App Router)
-│   ├── page.tsx             # Login/Signup
-│   ├── dashboard/           # Dashboard de viagens
-│   └── trips/[id]/          # Páginas da viagem
-│       ├── page.tsx         # Painel principal
-│       ├── expenses/        # Gestão de despesas
-│       ├── proposals/       # Propostas e votação
-│       ├── tasks/           # Tarefas
-│       ├── members/         # Membros
-│       └── activity/        # Feed de atividades
-├── components/              # Componentes React
-│   ├── auth/               # Login/Signup forms
-│   ├── trips/              # Cards e dialogs de viagens
-│   ├── expenses/           # Componentes de despesas
-│   ├── proposals/          # Componentes de propostas
-│   ├── tasks/              # Componentes de tarefas
-│   ├── members/            # Componentes de membros
-│   ├── activity/           # Feed de atividades
-│   ├── layout/             # Header, Nav
-│   └── ui/                 # Componentes base (shadcn)
-├── contexts/               # React Context (Auth)
-├── lib/                    # Utilitários
-│   ├── api.ts             # Cliente REST API
-│   ├── mock-data.ts       # Dados de exemplo
-│   └── utils.ts           # Helpers
-├── public/                 # Assets estáticos
-│   ├── manifest.json      # PWA manifest
-│   └── *.jpg              # Imagens
-└── README.md              # Esta documentação
-\`\`\`
+```
+TripSync/
+├── 📱 Frontend
+│   ├── app/
+│   │   ├── page.tsx                # Login/Signup
+│   │   ├── dashboard/              # Dashboard
+│   │   └── trips/[id]/             # Páginas da viagem
+│   ├── components/                 # Componentes React
+│   └── contexts/
+│       └── auth-context.tsx        # Autenticação
+│
+├── 🔌 Backend
+│   ├── app/api/v1/                 # API Routes
+│   │   ├── auth/                   # Autenticação
+│   │   └── trips/                  # Endpoints
+│   └── lib/
+│       ├── prisma.ts               # Cliente Prisma
+│       ├── auth.ts                 # JWT + bcrypt
+│       └── api-helpers.ts          # Helpers
+│
+├── 🗄️ Banco de Dados
+│   └── prisma/
+│       └── schema.prisma           # Schema
+│
+└── 📚 Documentação
+    ├── INICIO_RAPIDO.md
+    ├── SETUP_BACKEND.md
+    ├── COMANDOS_UTEIS.md
+    └── IMPLEMENTACAO_BACKEND.md
+```
 
 ## 🚢 Deploy
 
 ### Vercel (Recomendado)
 
-1. Faça push do código para GitHub
+1. Push para GitHub
 2. Importe no Vercel
-3. Configure a variável de ambiente:
-   - `NEXT_PUBLIC_API_BASE_URL`: URL do seu backend em produção
-4. Deploy automático
+3. Configure variáveis:
+   - `DATABASE_URL` - Use [Supabase](https://supabase.com) ou [Neon](https://neon.tech)
+   - `JWT_SECRET` - Gere uma chave forte
+   - `NEXT_PUBLIC_API_BASE_URL` - Seu domínio + /api/v1
+4. Deploy automático! 🚀
 
-### Netlify
+### Banco de Dados em Produção
 
-\`\`\`bash
-npm run build
-\`\`\`
+Recomendado:
+- **[Supabase](https://supabase.com)** - Grátis, PostgreSQL
+- **[Neon](https://neon.tech)** - PostgreSQL serverless
+- **[Railway](https://railway.app)** - App + Banco completo
 
-Faça upload da pasta `.next` ou conecte ao Git.
+## 🛠️ Comandos Úteis
 
-### Build Estático
+```bash
+# Desenvolvimento
+pnpm dev                    # Rodar projeto
+pnpm build                  # Build produção
 
-\`\`\`bash
-npm run build
-npm run start
-\`\`\`
+# Banco de Dados
+pnpm run db:studio          # GUI do banco
+pnpm run db:migrate         # Criar migration
+pnpm run db:reset           # Resetar banco
 
-## 🔧 Desenvolvimento
+# Setup
+pnpm run setup              # Setup completo
+```
 
-### Adicionar Nova Funcionalidade
-
-1. Crie componentes em `components/`
-2. Adicione páginas em `app/`
-3. Atualize `lib/api.ts` com novos endpoints
-4. Teste com dados mock primeiro
-5. Conecte ao backend real
-
-### Customizar Cores
-
-Edite `app/globals.css`:
-
-\`\`\`css
-:root {
-  --primary: oklch(0.78 0.21 130); /* Verde #64DD17 */
-  /* ... outras cores ... */
-}
-\`\`\`
-
-## 📝 Notas para o Backend
-
-### Segurança
-
-- Implemente validação de JWT em todos os endpoints protegidos
-- Valide que o usuário tem permissão para acessar a viagem
-- Sanitize inputs para prevenir SQL injection
-- Use HTTPS em produção
-
-### CORS
-
-Configure CORS no Spring Boot para aceitar requisições do frontend:
-
-\`\`\`java
-@Configuration
-public class CorsConfig {
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                    .allowedOrigins("http://localhost:3000", "https://seu-dominio.com")
-                    .allowedMethods("GET", "POST", "PUT", "DELETE")
-                    .allowedHeaders("*")
-                    .allowCredentials(true);
-            }
-        };
-    }
-}
-\`\`\`
-
-### Modelos de Dados
-
-Crie entidades JPA correspondentes aos tipos TypeScript em `lib/api.ts`.
+📖 **Mais comandos:** `COMANDOS_UTEIS.md`
 
 ## 🐛 Troubleshooting
 
-### Erro de CORS
+### "Can't reach database server"
+- PostgreSQL não está rodando
+- Senha errada no `.env`
+- Verifique: `docker ps` ou `psql -U postgres`
 
-- Verifique configuração CORS no backend
-- Confirme que `NEXT_PUBLIC_API_BASE_URL` está correto
+### "JWT_SECRET is not defined"
+- Arquivo `.env` não existe
+- Crie o `.env` na raiz do projeto
 
-### Token Expirado
+### Página em branco após login
+- Backend não está rodando
+- Rode: `pnpm dev`
 
-- Implemente refresh token no backend
-- Adicione lógica de renovação no frontend
+📖 **Mais soluções:** `SETUP_BACKEND.md`
 
-### Imagens não carregam
+## 📚 Documentação
 
-- Verifique que as imagens estão em `public/`
-- Use caminhos absolutos: `/imagem.jpg`
+- 📖 **Setup Rápido** - `INICIO_RAPIDO.md`
+- 📖 **Setup Completo** - `SETUP_BACKEND.md`
+- 📖 **Comandos** - `COMANDOS_UTEIS.md`
+- 📖 **Implementação** - `IMPLEMENTACAO_BACKEND.md`
+- 📖 **API Endpoints** - `BACKEND_ENDPOINTS.md`
+- 📖 **Testes** - `TESTING_GUIDE.md`
 
-## 📞 Suporte
+## 🎓 Para Projeto Escolar
 
-Para dúvidas sobre o frontend, consulte:
-- [Documentação Next.js](https://nextjs.org/docs)
-- [Documentação Tailwind CSS](https://tailwindcss.com/docs)
-- [shadcn/ui](https://ui.shadcn.com)
+Este projeto está **completo** para apresentação acadêmica:
+- ✅ Frontend profissional
+- ✅ Backend próprio (API REST)
+- ✅ Banco de dados PostgreSQL
+- ✅ Autenticação segura
+- ✅ Documentação completa
+- ✅ Funcional e testável
 
 ## 📄 Licença
 
-Este projeto foi desenvolvido como MVP para demonstração.
+Projeto educacional desenvolvido para a Univesp.
 
 ---
 
-**Desenvolvido para Nathalia e organizadores de viagens em grupo** 🚀
+**Desenvolvido com ❤️ para organizadores de viagens em grupo** 🚀
