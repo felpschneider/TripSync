@@ -1,6 +1,20 @@
 // API configuration and utilities for REST API communication
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api/v1"
+// Get API base URL - uses relative URLs in browser (same domain) or configured URL
+function getApiBaseUrl(): string {
+  // If NEXT_PUBLIC_API_BASE_URL is set, use it
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL
+  }
+  
+  // In browser, use relative URL (same domain) - no CORS issues
+  if (typeof window !== "undefined") {
+    return "/api/v1"
+  }
+  
+  // Server-side fallback (SSR)
+  return "http://localhost:3000/api/v1"
+}
 
 export interface ApiError {
   message: string
@@ -36,7 +50,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     ...options,
     headers,
   })

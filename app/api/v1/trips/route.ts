@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { success, error, unauthorized } from '@/lib/api-helpers'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/v1/trips - Listar todas as viagens do usuário
 export async function GET(request: NextRequest) {
   try {

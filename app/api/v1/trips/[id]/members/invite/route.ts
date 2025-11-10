@@ -2,8 +2,10 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { success, error, unauthorized, notFound } from '@/lib/api-helpers'
-import { sendEmail, getInviteEmailTemplate } from '@/lib/email'
+import { sendEmail, getInviteEmailTemplate, getAppBaseUrl } from '@/lib/email'
 import { v4 as uuidv4 } from 'uuid'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
@@ -25,17 +27,15 @@ export async function POST(
       return error('Email inválido', 400)
     }
 
-    const member = await prisma.tripMember.findFirst({
-      where: { tripId, userId: user.userId }
-    })
-
-    if (!member) {
-      return notFound('Viagem não encontrada')
-    }
-
-    // Buscar informações da viagem e do usuário que está convidando
-    const trip = await prisma.trip.findUnique({
-      where: { id: tripId },
+    // Buscar informações da viagem e verificar acesso
+    const trip = await prisma.trip.findFirst({
+      where: {
+        id: tripId,
+        OR: [
+          { organizerId: user.userId },
+          { members: { some: { userId: user.userId } } }
+        ]
+      },
       include: {
         organizer: { select: { name: true } }
       }
@@ -86,9 +86,8 @@ export async function POST(
       })
 
       // Enviar e-mail informando que foi adicionado
-      const inviteLink = `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}`
       const emailHtml = getInviteEmailTemplate(
-        inviteLink,
+        getAppBaseUrl(),
         trip.title,
         inviter?.name || 'Um membro',
         false
@@ -124,7 +123,7 @@ export async function POST(
         }
       })
 
-      const inviteLink = `${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}/invite/${token}`
+      const inviteLink = `${getAppBaseUrl()}/invite/${token}`
 
       // Enviar e-mail de convite
       const emailHtml = getInviteEmailTemplate(

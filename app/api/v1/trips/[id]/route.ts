@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { success, error, unauthorized, forbidden, notFound } from '@/lib/api-helpers'
 
+export const dynamic = 'force-dynamic'
+
 // Verificar se usuário tem acesso à viagem
 async function checkTripAccess(tripId: string, userId: string) {
   const trip = await prisma.trip.findFirst({
@@ -45,6 +47,13 @@ export async function GET(
       0
     )
 
+    // Verificar se o organizador está na lista de membros
+    const organizerIsMember = trip.members.some(
+      member => member.userId === trip.organizerId
+    )
+    // Se o organizador não estiver na lista de membros, adicionar 1 ao count
+    const memberCount = trip._count.members + (organizerIsMember ? 0 : 1)
+
     return success({
       id: trip.id,
       title: trip.title,
@@ -53,7 +62,7 @@ export async function GET(
       endDate: trip.endDate.toISOString().split('T')[0],
       budget: Number(trip.budget),
       totalSpent,
-      memberCount: trip._count.members,
+      memberCount,
       imageUrl: trip.imageUrl
     })
 
@@ -118,6 +127,7 @@ export async function PUT(
       },
       include: {
         expenses: true,
+        members: true,
         _count: {
           select: { members: true }
         }
@@ -129,6 +139,13 @@ export async function PUT(
       0
     )
 
+    // Verificar se o organizador está na lista de membros
+    const organizerIsMember = updatedTrip.members.some(
+      member => member.userId === updatedTrip.organizerId
+    )
+    // Se o organizador não estiver na lista de membros, adicionar 1 ao count
+    const memberCount = updatedTrip._count.members + (organizerIsMember ? 0 : 1)
+
     return success({
       id: updatedTrip.id,
       title: updatedTrip.title,
@@ -137,7 +154,7 @@ export async function PUT(
       endDate: updatedTrip.endDate.toISOString().split('T')[0],
       budget: Number(updatedTrip.budget),
       totalSpent,
-      memberCount: updatedTrip._count.members,
+      memberCount,
       imageUrl: updatedTrip.imageUrl
     })
 

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { success, error, unauthorized, notFound } from '@/lib/api-helpers'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string; proposalId: string } }
@@ -25,11 +27,17 @@ export async function POST(
       return notFound('Proposta não encontrada')
     }
 
-    const member = await prisma.tripMember.findFirst({
-      where: { tripId, userId: user.userId }
+    const trip = await prisma.trip.findFirst({
+      where: {
+        id: tripId,
+        OR: [
+          { organizerId: user.userId },
+          { members: { some: { userId: user.userId } } }
+        ]
+      }
     })
 
-    if (!member) {
+    if (!trip) {
       return notFound('Viagem não encontrada')
     }
 

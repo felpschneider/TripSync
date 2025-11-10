@@ -7,6 +7,27 @@ interface SendEmailParams {
   html: string
 }
 
+// Get application base URL for links in emails
+export function getAppBaseUrl(): string {
+  // Priority 1: NEXT_PUBLIC_APP_URL (if explicitly set)
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  
+  // Priority 2: VERCEL_URL (automatically set by Vercel)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  
+  // Priority 3: NEXT_PUBLIC_API_BASE_URL without /api/v1
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api/v1', '')
+  }
+  
+  // Fallback: localhost for development
+  return 'http://localhost:3000'
+}
+
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   // Em desenvolvimento, apenas log do e-mail
   if (process.env.NODE_ENV === 'development') {
@@ -134,7 +155,7 @@ export function getInviteEmailTemplate(inviteLink: string, tripTitle: string, in
             </ol>
 
             <center>
-              <a href="${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:3000'}" class="button">Acessar TripSync</a>
+              <a href="${getAppBaseUrl()}" class="button">Acessar TripSync</a>
             </center>
           </div>
           <div class="footer">
