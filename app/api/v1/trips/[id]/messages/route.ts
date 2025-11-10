@@ -3,11 +3,19 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { success, error, unauthorized, notFound } from '@/lib/api-helpers'
 
+export const dynamic = 'force-dynamic'
+
 async function checkTripAccess(tripId: string, userId: string) {
-  const member = await prisma.tripMember.findFirst({
-    where: { tripId, userId }
+  const trip = await prisma.trip.findFirst({
+    where: {
+      id: tripId,
+      OR: [
+        { organizerId: userId },
+        { members: { some: { userId } } }
+      ]
+    }
   })
-  return !!member
+  return !!trip
 }
 
 // GET /api/v1/trips/[id]/messages - Listar mensagens do chat

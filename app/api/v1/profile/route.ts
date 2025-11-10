@@ -4,6 +4,8 @@ import { requireAuth } from '@/lib/auth'
 import { success, error, unauthorized } from '@/lib/api-helpers'
 import bcrypt from 'bcryptjs'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const user = requireAuth(request)
