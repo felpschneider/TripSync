@@ -2,14 +2,15 @@
 
 // Get API base URL - uses relative URLs in browser (same domain) or configured URL
 function getApiBaseUrl(): string {
-  // If NEXT_PUBLIC_API_BASE_URL is set, use it
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL
-  }
-  
-  // In browser, use relative URL (same domain) - no CORS issues
+  // In browser, ALWAYS use relative URL (same domain) - no CORS issues
+  // This ensures requests go to the same domain, avoiding CORS problems
   if (typeof window !== "undefined") {
     return "/api/v1"
+  }
+  
+  // Server-side (SSR): use configured URL or fallback
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL
   }
   
   // Server-side fallback (SSR)
