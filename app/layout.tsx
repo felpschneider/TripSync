@@ -10,14 +10,30 @@ export const metadata: Metadata = {
   title: "TripSync - Organize suas viagens",
   description: "Aplicativo para organização de viagens em grupo com gestão de despesas, propostas e tarefas",
   manifest: "/manifest.json",
-  themeColor: "#64DD17",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+    ],
+    shortcut: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "TripSync",
   },
-    generator: 'v0.app'
+  generator: 'v0.app'
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#64DD17",
 }
 
 export default function RootLayout({

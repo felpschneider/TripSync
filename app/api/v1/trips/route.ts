@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = requireAuth(request)
     const body = await request.json()
-    const { title, destination, startDate, endDate, budget } = body
+    const { title, destination, startDate, endDate, budget, imageUrl } = body
 
     // Validação
     if (!title || !destination || !startDate || !endDate || !budget) {
@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         budget,
+        imageUrl: imageUrl || null,
         organizerId: user.userId,
         members: {
           create: {

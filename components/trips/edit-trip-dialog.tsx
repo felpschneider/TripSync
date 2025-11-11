@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,52 +14,63 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { PlusIcon } from "lucide-react"
+import { PencilIcon } from "lucide-react"
+import { api } from "@/lib/api"
+import { toast } from "sonner"
 
-interface CreateTripDialogProps {
-  onCreateTrip: (trip: {
+interface EditTripDialogProps {
+  trip: {
+    id: string
     title: string
     destination: string
     startDate: string
     endDate: string
     budget: number
-    imageUrl?: string
-  }) => Promise<void>
+    imageUrl?: string | null
+  }
+  onTripUpdated?: () => void
 }
 
-export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
+export function EditTripDialog({ trip, onTripUpdated }: EditTripDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    title: "",
-    destination: "",
-    startDate: "",
-    endDate: "",
-    budget: "",
-    imageUrl: "",
+    title: trip.title,
+    destination: trip.destination,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+    budget: trip.budget.toString(),
+    imageUrl: trip.imageUrl || "",
   })
+
+  // Atualizar formData quando trip mudar
+  useEffect(() => {
+    setFormData({
+      title: trip.title,
+      destination: trip.destination,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      budget: trip.budget.toString(),
+      imageUrl: trip.imageUrl || "",
+    })
+  }, [trip])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      await onCreateTrip({
+      await api.trips.update(trip.id, {
         ...formData,
         budget: Number.parseFloat(formData.budget),
         imageUrl: formData.imageUrl || undefined,
       })
+      toast.success("Viagem atualizada com sucesso!")
       setOpen(false)
-      setFormData({
-        title: "",
-        destination: "",
-        startDate: "",
-        endDate: "",
-        budget: "",
-        imageUrl: "",
-      })
-    } catch (error) {
-      console.error("Error creating trip:", error)
+      onTripUpdated?.()
+    } catch (error: any) {
+      console.error("Error updating trip:", error)
+      toast.error(error.message || "Erro ao atualizar viagem. Tente novamente.")
     } finally {
       setLoading(false)
     }
@@ -69,16 +79,16 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="gap-2">
-          <PlusIcon className="h-5 w-5" />
-          Nova Viagem
+        <Button variant="outline" size="sm" className="gap-2">
+          <PencilIcon className="h-4 w-4" />
+          Editar
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Criar Nova Viagem</DialogTitle>
-            <DialogDescription>Preencha os detalhes da sua próxima aventura em grupo</DialogDescription>
+            <DialogTitle>Editar Viagem</DialogTitle>
+            <DialogDescription>Atualize os detalhes da viagem</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -154,7 +164,7 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Criando..." : "Criar Viagem"}
+              {loading ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </form>
@@ -162,3 +172,4 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
     </Dialog>
   )
 }
+
