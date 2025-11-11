@@ -17,51 +17,106 @@ export default function TripDashboardPage() {
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const [tripData, expensesData, tasksData] = await Promise.all([
-          api.trips.get(tripId),
-          api.expenses.list(tripId),
-          api.tasks.list(tripId)
-        ])
-        setTrip(tripData)
-        setExpenses(expensesData)
-        setTasks(tasksData.filter((t: any) => !t.completed))
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [tripData, expensesData, tasksData] = await Promise.all([
+        api.trips.get(tripId),
+        api.expenses.list(tripId),
+        api.tasks.list(tripId)
+      ])
+      setTrip(tripData)
+      setExpenses(expensesData)
+      setTasks(tasksData.filter((t: any) => !t.completed))
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchData()
   }, [tripId])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    )
+  const handleTripUpdated = () => {
+    // Recarregar dados da viagem após atualização
+    fetchData()
   }
 
-  if (!trip) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Viagem não encontrada</p>
-      </div>
-    )
-  }
-
-  const totalSpent = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
+  const totalSpent = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
 
   return (
     <div className="min-h-screen bg-background">
-      <TripHeader tripTitle={trip.title} tripDestination={trip.destination} />
+      {trip ? (
+        <TripHeader 
+          trip={{
+            id: trip.id,
+            title: trip.title,
+            destination: trip.destination,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            budget: trip.budget,
+            imageUrl: trip.imageUrl
+          }}
+          isOrganizer={trip.isOrganizer}
+          onTripUpdated={handleTripUpdated}
+        />
+      ) : (
+        <header className="border-b bg-card sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
       <TripNav tripId={tripId} />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {loading ? (
+          <div className="space-y-8">
+            <div className="h-24 w-full bg-muted animate-pulse rounded-lg" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="border rounded-lg p-6 space-y-3">
+                <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+                </div>
+              </div>
+              <div className="border rounded-lg p-6 space-y-3">
+                <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : !trip ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Viagem não encontrada</p>
+          </div>
+        ) : (
+          <>
+        {trip.imageUrl && (
+          <div className="relative h-64 w-full rounded-lg overflow-hidden border">
+            <img 
+              src={trip.imageUrl} 
+              alt={trip.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Se a imagem falhar ao carregar, esconder o container
+                e.currentTarget.parentElement?.classList.add('hidden')
+              }}
+            />
+          </div>
+        )}
         <BudgetSummary budget={trip.budget} totalSpent={totalSpent} memberCount={trip.memberCount} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -144,6 +199,8 @@ export default function TripDashboardPage() {
             )}
           </CardContent>
         </Card>
+          </>
+        )}
       </main>
     </div>
   )

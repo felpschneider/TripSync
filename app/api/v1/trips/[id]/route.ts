@@ -63,7 +63,8 @@ export async function GET(
       budget: Number(trip.budget),
       totalSpent,
       memberCount,
-      imageUrl: trip.imageUrl
+      imageUrl: trip.imageUrl,
+      isOrganizer: trip.organizerId === user.userId
     })
 
   } catch (err) {
@@ -84,7 +85,7 @@ export async function PUT(
     const user = requireAuth(request)
     const { id } = params
     const body = await request.json()
-    const { title, destination, startDate, endDate, budget } = body
+    const { title, destination, startDate, endDate, budget, imageUrl } = body
 
     // Verificar se é o organizador
     const trip = await prisma.trip.findUnique({
@@ -117,6 +118,7 @@ export async function PUT(
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         budget,
+        imageUrl: imageUrl !== undefined ? (imageUrl || null) : undefined,
         activities: {
           create: {
             type: 'budget_updated',

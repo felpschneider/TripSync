@@ -59,28 +59,59 @@ export default function ChatPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    )
-  }
-
-  if (!trip) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Viagem não encontrada</p>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      <TripHeader tripTitle={trip.title} tripDestination={trip.destination} />
+      {trip ? (
+        <TripHeader 
+          trip={{
+            id: trip.id,
+            title: trip.title,
+            destination: trip.destination,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            budget: trip.budget,
+            imageUrl: trip.imageUrl
+          }}
+          isOrganizer={trip.isOrganizer}
+        />
+      ) : (
+        <header className="border-b bg-card sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
       <TripNav tripId={tripId} />
 
       <main className="container mx-auto px-4 py-8">
+        {loading ? (
+          <Card className="flex flex-col h-[calc(100vh-300px)]">
+            <CardHeader className="border-b">
+              <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                  <div className="h-16 w-3/4 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </CardContent>
+            <div className="border-t p-4">
+              <div className="h-10 w-full bg-muted animate-pulse rounded" />
+            </div>
+          </Card>
+        ) : !trip ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Viagem não encontrada</p>
+          </div>
+        ) : (
+          <>
         <Card className="flex flex-col h-[calc(100vh-300px)]">
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2">
@@ -104,6 +135,8 @@ export default function ChatPage() {
           </CardContent>
           <ChatInput onSend={handleSendMessage} />
         </Card>
+          </>
+        )}
       </main>
     </div>
   )

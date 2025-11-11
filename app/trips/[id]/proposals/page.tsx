@@ -18,23 +18,25 @@ export default function ProposalsPage() {
   const [proposals, setProposals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        const [tripData, proposalsData] = await Promise.all([
-          api.trips.get(tripId),
-          api.proposals.list(tripId)
-        ])
-        setTrip(tripData)
-        setProposals(proposalsData)
-      } catch (error) {
-        console.error("Error fetching data:", error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [tripData, proposalsData] = await Promise.all([
+        api.trips.get(tripId),
+        api.proposals.list(tripId)
+      ])
+      setTrip(tripData)
+      setProposals(proposalsData)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId])
 
   const handleCreateProposal = async (proposalData: { title: string; description: string }) => {
@@ -79,20 +81,8 @@ export default function ProposalsPage() {
     })
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
-    )
-  }
-
-  if (!trip) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Viagem não encontrada</p>
-      </div>
-    )
+  const handleTripUpdated = () => {
+    fetchData()
   }
 
   const votingProposals = proposals.filter((p) => p.status === "voting")
@@ -100,10 +90,60 @@ export default function ProposalsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TripHeader tripTitle={trip.title} tripDestination={trip.destination} />
+      {trip ? (
+        <TripHeader 
+          trip={{
+            id: trip.id,
+            title: trip.title,
+            destination: trip.destination,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            budget: trip.budget,
+            imageUrl: trip.imageUrl
+          }}
+          isOrganizer={trip.isOrganizer}
+          onTripUpdated={handleTripUpdated}
+        />
+      ) : (
+        <header className="border-b bg-card sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
       <TripNav tripId={tripId} />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {loading ? (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+              </div>
+              <div className="h-10 w-32 bg-muted animate-pulse rounded" />
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border rounded-lg p-4 space-y-3">
+                  <div className="h-5 w-3/4 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : !trip ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Viagem não encontrada</p>
+          </div>
+        ) : (
+          <>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Propostas de Roteiro</h2>
@@ -143,6 +183,8 @@ export default function ProposalsPage() {
             )}
           </TabsContent>
         </Tabs>
+          </>
+        )}
       </main>
     </div>
   )
