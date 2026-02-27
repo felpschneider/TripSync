@@ -24,6 +24,7 @@ interface CreateTripDialogProps {
     startDate: string
     endDate: string
     budget: number
+    imageUrl?: string
   }) => Promise<void>
 }
 
@@ -36,6 +37,7 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
     startDate: "",
     endDate: "",
     budget: "",
+    imageUrl: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +48,7 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
       await onCreateTrip({
         ...formData,
         budget: Number.parseFloat(formData.budget),
+        imageUrl: formData.imageUrl || undefined,
       })
       setOpen(false)
       setFormData({
@@ -54,6 +57,7 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
         startDate: "",
         endDate: "",
         budget: "",
+        imageUrl: "",
       })
     } catch (error) {
       console.error("Error creating trip:", error)
@@ -130,6 +134,19 @@ export function CreateTripDialog({ onCreateTrip }: CreateTripDialogProps) {
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">URL da Foto de Capa (opcional)</Label>
+              <Input
+                id="imageUrl"
+                type="url"
+                placeholder="https://exemplo.com/imagem.jpg"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Cole a URL de uma imagem para usar como capa da viagem
+              </p>
             </div>
           </div>
           <DialogFooter>

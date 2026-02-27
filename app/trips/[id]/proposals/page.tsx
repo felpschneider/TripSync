@@ -1,58 +1,88 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { TripHeader } from "@/components/layout/trip-header"
 import { TripNav } from "@/components/layout/trip-nav"
 import { ProposalCard } from "@/components/proposals/proposal-card"
 import { CreateProposalDialog } from "@/components/proposals/create-proposal-dialog"
-import { mockTrips, mockProposals } from "@/lib/mock-data"
+import { api } from "@/lib/api"
+import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function ProposalsPage() {
   const params = useParams()
   const tripId = params.id as string
 
-  const trip = mockTrips.find((t) => t.id === tripId) || mockTrips[0]
-  const [proposals, setProposals] = useState(mockProposals.filter((p) => p.tripId === tripId))
+  const [trip, setTrip] = useState<any>(null)
+  const [proposals, setProposals] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [tripData, proposalsData] = await Promise.all([
+        api.trips.get(tripId),
+        api.proposals.list(tripId)
+      ])
+      setTrip(tripData)
+      setProposals(proposalsData)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId])
 
   const handleCreateProposal = async (proposalData: { title: string; description: string }) => {
-    // In production, call API
-    const newProposal = {
-      id: String(proposals.length + 1),
-      tripId,
-      ...proposalData,
-      createdBy: { id: "1", name: "Nathalia Silva" },
-      createdAt: new Date().toISOString(),
-      votes: { yes: 0, no: 0 },
-      userVote: null,
-      status: "voting" as const,
+    try {
+      const newProposal = await api.proposals.create(tripId, proposalData)
+      setProposals([newProposal, ...proposals])
+    } catch (error) {
+      console.error("Error creating proposal:", error)
+      toast.error("Erro ao criar proposta. Tente novamente.")
     }
-    setProposals([newProposal, ...proposals])
   }
 
   const handleVote = async (proposalId: string, vote: "yes" | "no") => {
-    // In production, call API
-    setProposals(
-      proposals.map((p) => {
-        if (p.id === proposalId) {
-          const updatedVotes = { ...p.votes }
-          if (p.userVote) {
-            // Remove previous vote
-            updatedVotes[p.userVote]--
-          }
-          // Add new vote
-          updatedVotes[vote]++
+    try {
+      const updatedProposal = await api.proposals.vote(tripId, proposalId, vote)
+      setProposals(proposals.map((p) => (p.id === proposalId ? updatedProposal : p)))
+    } catch (error) {
+      console.error("Error voting on proposal:", error)
+      toast.error("Erro ao votar. Tente novamente.")
+    }
+  }
 
-          return {
-            ...p,
-            votes: updatedVotes,
-            userVote: vote,
+  const handleFinalize = async (proposalId: string) => {
+    toast("Tem certeza que deseja finalizar esta proposta? A votação será encerrada.", {
+      action: {
+        label: "Finalizar",
+        onClick: async () => {
+          try {
+            const finalizedProposal = await api.proposals.finalize(tripId, proposalId)
+            setProposals(proposals.map((p) => (p.id === proposalId ? finalizedProposal : p)))
+            toast.success("Proposta finalizada com sucesso!")
+          } catch (error) {
+            console.error("Error finalizing proposal:", error)
+            toast.error("Erro ao finalizar proposta. Tente novamente.")
           }
-        }
-        return p
-      }),
-    )
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {},
+      },
+    })
+  }
+
+  const handleTripUpdated = () => {
+    fetchData()
   }
 
   const votingProposals = proposals.filter((p) => p.status === "voting")
@@ -60,10 +90,60 @@ export default function ProposalsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TripHeader tripTitle={trip.title} tripDestination={trip.destination} />
+      {trip ? (
+        <TripHeader 
+          trip={{
+            id: trip.id,
+            title: trip.title,
+            destination: trip.destination,
+            startDate: trip.startDate,
+            endDate: trip.endDate,
+            budget: trip.budget,
+            imageUrl: trip.imageUrl
+          }}
+          isOrganizer={trip.isOrganizer}
+          onTripUpdated={handleTripUpdated}
+        />
+      ) : (
+        <header className="border-b bg-card sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <div className="h-6 w-48 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
       <TripNav tripId={tripId} />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {loading ? (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+              </div>
+              <div className="h-10 w-32 bg-muted animate-pulse rounded" />
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border rounded-lg p-4 space-y-3">
+                  <div className="h-5 w-3/4 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : !trip ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Viagem não encontrada</p>
+          </div>
+        ) : (
+          <>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Propostas de Roteiro</h2>
@@ -86,7 +166,7 @@ export default function ProposalsPage() {
               </div>
             ) : (
               votingProposals.map((proposal) => (
-                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} />
+                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} onFinalize={handleFinalize} />
               ))
             )}
           </TabsContent>
@@ -98,11 +178,13 @@ export default function ProposalsPage() {
               </div>
             ) : (
               completedProposals.map((proposal) => (
-                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} />
+                <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} onFinalize={handleFinalize} />
               ))
             )}
           </TabsContent>
         </Tabs>
+          </>
+        )}
       </main>
     </div>
   )

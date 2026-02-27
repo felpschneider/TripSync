@@ -1,6 +1,21 @@
 // API configuration and utilities for REST API communication
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1"
+// Get API base URL - uses relative URLs in browser (same domain) or configured URL
+function getApiBaseUrl(): string {
+  // In browser, ALWAYS use relative URL (same domain) - no CORS issues
+  // This ensures requests go to the same domain, avoiding CORS problems
+  if (typeof window !== "undefined") {
+    return "/api/v1"
+  }
+  
+  // Server-side (SSR): use configured URL or fallback
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL
+  }
+  
+  // Server-side fallback (SSR)
+  return "http://localhost:3000/api/v1"
+}
 
 export interface ApiError {
   message: string
@@ -36,17 +51,33 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     headers["Authorization"] = `Bearer ${token}`
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(`${getApiBaseUrl()}${endpoint}`, {
     ...options,
     headers,
   })
 
   if (!response.ok) {
+    let message = "Erro na requisição"
+    try {
+      const text = await response.text()
+      // Tenta fazer parse como JSON
+      const errorData = JSON.parse(text)
+      message = errorData.error || errorData.message || text || message
+    } catch {
+      // Se não for JSON válido, usa mensagem padrão
+      message = "Erro na requisição"
+    }
+    
     const error: ApiError = {
-      message: (await response.text()) || "Erro na requisição",
+      message,
       status: response.status,
     }
     throw error
+  }
+
+  // Handle 204 No Content responses
+  if (response.status === 204) {
+    return undefined as T
   }
 
   return response.json()
@@ -123,6 +154,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ vote }),
       }),
+    finalize: (tripId: string, proposalId: string) =>
+      apiRequest<any>(`/trips/${tripId}/proposals/${proposalId}/finalize`, {
+        method: "POST",
+      }),
   },
 
   // Task endpoints
@@ -166,5 +201,25 @@ export const api = {
   // Export endpoints
   export: {
     pdf: (tripId: string) => apiRequest<{ url: string }>(`/trips/${tripId}/export/pdf`),
+  },
+
+  // Chat/Messages endpoints
+  messages: {
+    list: (tripId: string) => apiRequest<any[]>(`/trips/${tripId}/messages`),
+    send: (tripId: string, content: string) =>
+      apiRequest<any>(`/trips/${tripId}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      }),
+  },
+
+  // Profile endpoints
+  profile: {
+    get: () => apiRequest<any>(`/profile`),
+    update: (data: any) =>
+      apiRequest<any>(`/profile`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
   },
 }

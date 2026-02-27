@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { setAuthToken, removeAuthToken, getAuthToken } from "@/lib/api"
+import { setAuthToken, removeAuthToken, getAuthToken, api } from "@/lib/api"
 
 interface User {
   id: string
@@ -28,55 +28,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for existing token on mount
     const token = getAuthToken()
     if (token) {
-      // In production, validate token with backend
-      // For now, use mock user
-      setUser({
-        id: "1",
-        name: "Nathalia Silva",
-        email: "nathalia@example.com",
-      })
+      // Token exists, user is authenticated
+      // User data will be fetched on first API call
+      // For now, we just mark as authenticated
+      const storedUser = localStorage.getItem("user_data")
+      if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      }
     }
     setLoading(false)
   }, [])
 
   const login = async (email: string, password: string) => {
     try {
-      // In production, call real API
-      // const { token, user } = await api.auth.login(email, password);
-
-      // Mock login for demo
-      const mockToken = "mock-jwt-token-" + Date.now()
-      setAuthToken(mockToken)
-      setUser({
-        id: "1",
-        name: "Nathalia Silva",
-        email,
-      })
-    } catch (error) {
-      throw new Error("Falha no login. Verifique suas credenciais.")
+      // Call real API
+      const { token, user } = await api.auth.login(email, password)
+      
+      setAuthToken(token)
+      localStorage.setItem("user_data", JSON.stringify(user))
+      setUser(user)
+    } catch (error: any) {
+      console.error("Erro no login:", error)
+      throw new Error(error.message || "Falha no login. Verifique suas credenciais.")
     }
   }
 
   const signup = async (email: string, password: string, name: string) => {
     try {
-      // In production, call real API
-      // const { token, user } = await api.auth.signup(email, password, name);
-
-      // Mock signup for demo
-      const mockToken = "mock-jwt-token-" + Date.now()
-      setAuthToken(mockToken)
-      setUser({
-        id: "1",
-        name,
-        email,
-      })
-    } catch (error) {
-      throw new Error("Falha no cadastro. Tente novamente.")
+      // Call real API
+      const { token, user } = await api.auth.signup(email, password, name)
+      
+      setAuthToken(token)
+      localStorage.setItem("user_data", JSON.stringify(user))
+      setUser(user)
+    } catch (error: any) {
+      console.error("Erro no cadastro:", error)
+      throw new Error(error.message || "Falha no cadastro. Tente novamente.")
     }
   }
 
   const logout = () => {
     removeAuthToken()
+    localStorage.removeItem("user_data")
     setUser(null)
   }
 
